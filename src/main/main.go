@@ -2,15 +2,45 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
 func main() {
-	fmt.Println("进程: ", os.Getpid(), " 已经启动...")
+	var subProcess *exec.Cmd
+
+	//退出时杀掉启动的进程
+	defer func() {
+		// 判断子进程是否已经自动退出
+		if subProcess.ProcessState.Exited() {
+			fmt.Println("")
+			fmt.Println("~~~项目已经退出~~~")
+			return
+		}
+
+		// 不用手动杀死进程，ctrl+c 终止主进程时同时会终止子进程
+
+		// 杀掉子进程
+		// err := subProcess.Process.Kill()
+		// if err != nil {
+		// 	fmt.Println("项目进程退出失败:" + err.Error())
+		// } else {
+		// 	fmt.Println("项目进程退出成功")
+		// }
+
+		// 杀掉所有同名的进程
+		// cmdKillAll := exec.Command("killall", binFile)
+		// err := cmdKillAll.Run()
+		// if err != nil {
+		// 	fmt.Println("项目进程退出失败:" + err.Error())
+		// } else {
+		// 	fmt.Println("项目进程退出成功")
+		// }
+		return
+	}()
 
 	//获得当前路径
 	curPath, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -19,8 +49,11 @@ func main() {
 		return
 	}
 
+	// 寻找根路径
+	rootPath := FindRoot(curPath)
+
 	//判断是否在项目的根目录
-	findPath := curPath + "/src/main/main.go"
+	findPath := rootPath + "/src/main/main.go"
 	_, err = os.Stat(findPath)
 	if err != nil {
 		fmt.Println(findPath+"不存在", err.Error())
@@ -28,7 +61,7 @@ func main() {
 	}
 
 	//将当前路径设置为GOPATH
-	err = os.Setenv("GOPATH", curPath)
+	err = os.Setenv("GOPATH", rootPath)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -36,12 +69,12 @@ func main() {
 	fmt.Println("GOPATH设置完成")
 
 	//获得当前路径的项目名
-	curPaths := strings.Split(curPath, "/")
-	binFile := curPaths[len(curPaths)-1] + "_bin"
+	rootPaths := strings.Split(rootPath, "/")
+	binFile := rootPaths[len(rootPaths)-1] + "_gorun"
 
 	fmt.Println("编译项目...")
 	cmd := exec.Command("go", "build", "-o", binFile, "./src/main/")
-	cmd.Dir = curPath
+	cmd.Dir = rootPath
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -50,45 +83,40 @@ func main() {
 		return
 	}
 
-	//退出时杀掉启动的进程
-	defer func() {
-		// 判断子程序是否已经退出
-		if cmd.ProcessState.Exited() {
-			fmt.Println("子进程", cmd.Process.Pid, "已经退出")
-			return
-		}
-
-		// 杀掉pid子进程
-		i := cmd.Process.Pid
-		pidstr := strconv.Itoa(i)
-		cmdKill := exec.Command("kill", pidstr)
-		err := cmdKill.Run()
-		if err != nil {
-			fmt.Println("项目进程退出失败:" + err.Error())
-		} else {
-			fmt.Println("项目进程退出成功")
-		}
-
-		// 杀掉所有名字的进程
-		// cmdKillAll := exec.Command("killall", binFile)
-		// err := cmdKillAll.Run()
-		// if err != nil {
-		// 	fmt.Println("项目进程退出失败:" + err.Error())
-		// } else {
-		// 	fmt.Println("项目进程退出成功")
-		// }
-	}()
-
-	fmt.Println("编译项目完成，开始运行项目...")
-	fmt.Println("以下开始为项目内的输出：")
-	cmd = exec.Command("./" + binFile)
-	cmd.Dir = curPath
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	err = cmd.Run()
+	fmt.Println("编译项目完成")
+	fmt.Println("~~~开始运行项目~~~ 以下开始为项目内的输出: ")
+	fmt.Println("")
+	subProcess = exec.Command("./" + binFile)
+	subProcess.Dir = rootPath
+	subProcess.Stderr = os.Stderr
+	subProcess.Stdout = os.Stdout
+	err = subProcess.Run()
 	if err != nil {
-		fmt.Println("运行项目失败：" + err.Error())
+		fmt.Println("运行项目失败: " + err.Error())
 		return
 	}
-	fmt.Println("子进程 pid: ", cmd.Process.Pid, " 已经启动...")
+}
+
+// FindRoot 用来找到项目根路径
+func FindRoot(path string) string {
+	var mark = false
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		fmt.Println("终端所在路径错误", err.Error())
+		return ""
+	}
+
+	for _, v := range files {
+		if v.IsDir() && v.Name() == "src" {
+			mark = true
+			break
+		}
+	}
+
+	if !mark {
+		index := strings.LastIndex(path, "/")
+		path := path[:index]
+		return FindRoot(path)
+	}
+	return path
 }
