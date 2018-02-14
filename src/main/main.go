@@ -70,7 +70,7 @@ func main() {
 
 	//获得当前路径的项目名
 	rootPaths := strings.Split(rootPath, "/")
-	binFile := rootPaths[len(rootPaths)-1] + "_gorun"
+	binFile := rootPaths[len(rootPaths)-1] + "_.gorun"
 
 	fmt.Println("编译项目...")
 	cmd := exec.Command("go", "build", "-o", binFile, "./src/main/")
