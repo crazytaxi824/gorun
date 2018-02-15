@@ -75,7 +75,9 @@ func main() {
 	}
 	err = subProcess.Wait()
 	if err != nil {
-		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "请检查 "+gorunFile+" : "+err.Error(), 0x1B)
+		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, err.Error(), 0x1B)
+		fmt.Println("")
+		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "请检查 "+gorunFile, 0x1B)
 		fmt.Println("")
 		fmt.Println("")
 		return
@@ -83,7 +85,7 @@ func main() {
 
 	fmt.Println("")
 	fmt.Println("")
-	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "~~~项目已经退出~~~", 0x1B)
+	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "~~~项目已经安全退出~~~", 0x1B)
 	fmt.Println("")
 	fmt.Println("")
 }
@@ -114,6 +116,5 @@ func KillProcess(subProcess *exec.Cmd) {
 
 	<-c
 	fmt.Println("")
-	fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "程序被强制中断!!!", 0x1B)
-	fmt.Println("")
+	fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "程序被强制中断!!! —— ", 0x1B)
 }
