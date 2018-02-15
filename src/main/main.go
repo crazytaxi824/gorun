@@ -18,7 +18,7 @@ func main() {
 		if subProcess.ProcessState.Exited() {
 			fmt.Println("")
 			fmt.Println("~~~项目已经退出~~~")
-			return
+			os.Exit(0)
 		}
 
 		// 不用手动杀死进程，ctrl+c 终止主进程时同时会终止子进程
@@ -39,14 +39,14 @@ func main() {
 		// } else {
 		// 	fmt.Println("项目进程退出成功")
 		// }
-		return
+		os.Exit(0)
 	}()
 
 	//获得当前路径
 	curPath, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		fmt.Println(err.Error())
-		return
+		os.Exit(1)
 	}
 
 	// 寻找根路径
@@ -57,14 +57,14 @@ func main() {
 	_, err = os.Stat(findPath)
 	if err != nil {
 		fmt.Println(findPath+"不存在", err.Error())
-		return
+		os.Exit(1)
 	}
 
 	//将当前路径设置为GOPATH
 	err = os.Setenv("GOPATH", rootPath)
 	if err != nil {
 		fmt.Println(err.Error())
-		return
+		os.Exit(1)
 	}
 	fmt.Println("GOPATH设置完成")
 
@@ -80,7 +80,7 @@ func main() {
 	err = cmd.Run()
 	if err != nil {
 		fmt.Println(err.Error())
-		return
+		os.Exit(1)
 	}
 
 	fmt.Println("编译项目完成")
@@ -93,7 +93,7 @@ func main() {
 	err = subProcess.Run()
 	if err != nil {
 		fmt.Println("运行项目失败: " + err.Error())
-		return
+		os.Exit(1)
 	}
 }
 
@@ -103,7 +103,7 @@ func FindRoot(path string) string {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		fmt.Println("终端所在路径错误", err.Error())
-		return ""
+		os.Exit(1)
 	}
 
 	for _, v := range files {
