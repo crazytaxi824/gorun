@@ -5,52 +5,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 )
 
+var subProcess *exec.Cmd
+
 func main() {
-	var subProcess *exec.Cmd
-
-	//退出时杀掉启动的进程
-	defer func() {
-		// 判断子进程是否已经自动退出
-		if subProcess.ProcessState.Exited() {
-			fmt.Println("")
-			fmt.Println("")
-			fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "~~~项目已经退出~~~", 0x1B)
-			fmt.Println("")
-
-			os.Exit(0)
-		}
-
-		// 不用手动杀死进程，ctrl+c 终止主进程时同时会终止子进程
-
-		// 杀掉单独的子进程
-		// err := subProcess.Process.Kill()
-		// if err != nil {
-		// 	fmt.Println("项目进程退出失败:" + err.Error())
-		// } else {
-		// 	fmt.Println("项目进程退出成功")
-		// }
-
-		// 杀掉所有同名的所有进程
-		// cmdKillAll := exec.Command("killall", binFile)
-		// err := cmdKillAll.Run()
-		// if err != nil {
-		// 	fmt.Println("项目进程退出失败:" + err.Error())
-		// } else {
-		// 	fmt.Println("项目进程退出成功")
-		// }
-		os.Exit(0)
-	}()
+	go KillProcess(subProcess)
 
 	//获得当前路径
 	curPath, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "当前路径获取失败: ", 0x1B)
 		fmt.Println(err.Error())
-		os.Exit(1)
+		return
 	}
 
 	// 向上层文件夹寻找根路径
@@ -58,7 +28,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, err.Error(), 0x1B)
 		fmt.Println("")
-		os.Exit(1)
+		return
 	}
 
 	//将当前路径设置为GOPATH
@@ -66,7 +36,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "设置GOPATH错误: ", 0x1B)
 		fmt.Println(err.Error())
-		os.Exit(1)
+		return
 	}
 	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "GOPATH设置完成", 0x1B)
 	fmt.Println("")
@@ -85,7 +55,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "编译项目错误: ", 0x1B)
 		fmt.Println(err.Error())
-		os.Exit(1)
+		return
 	}
 
 	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "编译项目完成", 0x1B)
@@ -97,12 +67,25 @@ func main() {
 	subProcess.Dir = rootPath
 	subProcess.Stderr = os.Stderr
 	subProcess.Stdout = os.Stdout
-	err = subProcess.Run()
+	err = subProcess.Start()
 	if err != nil {
 		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "运行项目失败: ", 0x1B)
 		fmt.Println(err.Error())
-		os.Exit(1)
+		return
 	}
+	err = subProcess.Wait()
+	if err != nil {
+		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "请检查 "+gorunFile+" : "+err.Error(), 0x1B)
+		fmt.Println("")
+		fmt.Println("")
+		return
+	}
+
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "~~~项目已经退出~~~", 0x1B)
+	fmt.Println("")
+	fmt.Println("")
 }
 
 // FindRoot 用来找到项目根路径
@@ -122,4 +105,15 @@ func FindRoot(path string) (string, error) {
 		return FindRoot(path)
 	}
 	return path, nil
+}
+
+// KillProcess 杀进程
+func KillProcess(subProcess *exec.Cmd) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+
+	<-c
+	fmt.Println("")
+	fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "程序被强制中断!!!", 0x1B)
+	fmt.Println("")
 }
