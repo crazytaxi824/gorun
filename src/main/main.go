@@ -70,7 +70,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	go KillProcess()
+	go trapKillProcess()
 
 	pid := strconv.Itoa(subProcess.Process.Pid)
 	fmt.Printf("%c[0;0;33m%s%c[0m", 0x1B, gorunFile+", pid: "+pid, 0x1B)
@@ -113,8 +113,8 @@ func FindRoot(path string) (string, error) {
 	return path, nil
 }
 
-// KillProcess 杀进程
-func KillProcess() {
+//  trapKillProcess 捕获ctrl+c，防止主进程被先kill。
+func trapKillProcess() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
