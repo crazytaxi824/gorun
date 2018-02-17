@@ -7,13 +7,14 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 var subProcess *exec.Cmd
 
 func main() {
-	go KillProcess(subProcess)
+	go KillProcess()
 
 	//获得当前路径
 	curPath, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -60,9 +61,9 @@ func main() {
 
 	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "编译项目完成", 0x1B)
 	fmt.Println("")
-	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "~~~开始运行项目~~~ 以下开始为项目内的输出: ", 0x1B)
-	fmt.Println("")
-	fmt.Println("")
+	// fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "开始运行项目, 以下开始为项目内的输出: ", 0x1B)
+	// fmt.Println("")
+	// fmt.Println("")
 	subProcess = exec.Command("./" + gorunFile)
 	subProcess.Dir = rootPath
 	subProcess.Stderr = os.Stderr
@@ -73,20 +74,26 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
+	pid := strconv.Itoa(subProcess.Process.Pid)
+	fmt.Printf("%c[0;0;33m%s%c[0m", 0x1B, gorunFile+", pid: "+pid, 0x1B)
+	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, " 项目开始运行, 以下开始为项目内的输出: ", 0x1B)
+	fmt.Println("")
+	fmt.Println("")
+
 	err = subProcess.Wait()
 	if err != nil {
-		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, err.Error(), 0x1B)
 		fmt.Println("")
-		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "请检查 "+gorunFile, 0x1B)
+		fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "错误信息："+err.Error(), 0x1B)
 		fmt.Println("")
+		fmt.Printf("%c[0;0;33m%s%c[0m", 0x1B, gorunFile+", pid: "+pid, 0x1B)
+		fmt.Printf("%c[0;0;33m%s%c[0m", 0x1B, " 项目意外退出 T_T", 0x1B)
 		fmt.Println("")
 		return
 	}
 
 	fmt.Println("")
-	fmt.Println("")
-	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "~~~项目已经安全退出~~~", 0x1B)
-	fmt.Println("")
+	fmt.Printf("%c[0;0;33m%s%c[0m", 0x1B, gorunFile+", pid: "+pid, 0x1B)
+	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, " 项目安全退出 ^_^ ", 0x1B)
 	fmt.Println("")
 }
 
@@ -110,11 +117,8 @@ func FindRoot(path string) (string, error) {
 }
 
 // KillProcess 杀进程
-func KillProcess(subProcess *exec.Cmd) {
+func KillProcess() {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-
+	signal.Notify(c, os.Interrupt)
 	<-c
-	fmt.Println("")
-	fmt.Printf("%c[0;0;31m%s%c[0m", 0x1B, "程序被强制中断!!! —— ", 0x1B)
 }
