@@ -76,7 +76,6 @@ func main() {
 	fmt.Printf("%c[0;0;33m%s%c[0m", 0x1B, gorunFile+", pid: "+pid, 0x1B)
 	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, " 项目开始运行, 以下开始为项目内的输出: ", 0x1B)
 	fmt.Println("")
-	fmt.Println("")
 
 	err = subProcess.Wait()
 	if err != nil {
