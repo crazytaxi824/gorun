@@ -11,11 +11,7 @@ import (
 	"strings"
 )
 
-var subProcess *exec.Cmd
-
 func main() {
-	go KillProcess()
-
 	//获得当前路径
 	curPath, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -64,7 +60,7 @@ func main() {
 	// fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, "开始运行项目, 以下开始为项目内的输出: ", 0x1B)
 	// fmt.Println("")
 	// fmt.Println("")
-	subProcess = exec.Command("./" + gorunFile)
+	subProcess := exec.Command("./" + gorunFile)
 	subProcess.Dir = rootPath
 	subProcess.Stderr = os.Stderr
 	subProcess.Stdout = os.Stdout
@@ -74,6 +70,8 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
+	go KillProcess()
+
 	pid := strconv.Itoa(subProcess.Process.Pid)
 	fmt.Printf("%c[0;0;33m%s%c[0m", 0x1B, gorunFile+", pid: "+pid, 0x1B)
 	fmt.Printf("%c[0;0;32m%s%c[0m", 0x1B, " 项目开始运行, 以下开始为项目内的输出: ", 0x1B)
